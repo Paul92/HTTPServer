@@ -10,15 +10,64 @@
 #include<netinet/in.h>
 #include<netdb.h>
 
-#include "error.h"
-
 #define PORT 80
+
+#if 1
+# define ERR_LOG(fmt, args...) fprintf(stderr, "%s (%d) in %s(): ", \
+                __FILE__, __LINE__, __FUNCTION__); \
+        fprintf(stderr, fmt, ## args)
+#else
+# define ERR_LOG(fmt, args...)
+#endif
+
+#define DOC_ROOT "."
+
+void sendFile(char file[100], int sockfd){
+    char filePath[100] = DOC_ROOT;
+    strcat(filePath, file);
+    FILE *f = fopen(filePath, "r");
+
+    printf("Sending file %s\n", filePath);
+    printf("FILE %p\n", f);
+    char character;
+    while(!feof(f)){
+        fscanf(f, "%c", &character);
+        if(!feof(f)){
+            write(sockfd, &character, 1);
+        }
+    }
+    close(sockfd);
+
+}
+
+
+void parse(char request[1000], int sockfd){
+    char data[100];
+    sscanf(request, "%s", data);
+    int n = strlen(data) + 1;
+    printf("%d\n", n);
+    if(strcmp(data, "GET") == 0){
+        char file[100];
+        sscanf(request + n, "%s", file);
+        n += strlen(file) + 1;
+        if(strcmp(file, "/patrat") == 0){
+
+        }else if(strcmp(file, "/login") == 0){
+
+        }else if(strcmp(file, "/verifica") == 0){
+
+        }else{
+            sendFile(file, sockfd);
+        }
+    }
+}
 
 int server(){
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd<0)
-        errorOpeningSocket();
+    if(sockfd<0){
+        ERR_LOG("Error creating socket");
+    }
     
     struct sockaddr_in serv_addr, cli_addr;
     memset((char*) &serv_addr, 0, sizeof(serv_addr));
@@ -27,8 +76,9 @@ int server(){
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    if(bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
-        errorOnBinding();
+    if(bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+        ERR_LOG("Error on binding");
+    }
 
     listen(sockfd, 5);
 
@@ -36,12 +86,24 @@ int server(){
 
     while(1){
         int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &cilen);
-        if(newsockfd < 0)
-            errorOnAccept();
-        else{
-            char data[1000];
-            read(newsockfd, data, 1000);
-            printf("%s\n", data);
+        if(newsockfd < 0){
+            ERR_LOG("Error on accept");
+        }else{
+            char request[1000];
+            int requestIndex=0;
+            char data;
+            int ok=1;
+            while(ok){
+                read(newsockfd, &data, 1);
+                request[requestIndex++] = data;
+                if(data == '\n'){
+                    parse(request, newsockfd);
+                    requestIndex=0;
+                    ok=0;
+                }
+
+            }
+            
         }
     }
 
