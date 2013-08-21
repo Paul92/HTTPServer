@@ -12,20 +12,31 @@
 
 #define PORT 80
 
-#if 1
 # define ERR_LOG(fmt, args...) fprintf(stderr, "%s (%d) in %s(): ", \
                 __FILE__, __LINE__, __FUNCTION__); \
         fprintf(stderr, fmt, ## args)
-#else
-# define ERR_LOG(fmt, args...)
-#endif
 
 #define DOC_ROOT "."
+#define LOCATION "localhost"
 
 void sendFile(char file[100], int sockfd){
+
     char filePath[100] = DOC_ROOT;
     strcat(filePath, file);
     FILE *f = fopen(filePath, "r");
+
+    fseek(f, 0, SEEK_END);
+    int fileSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char responseHeader[1000];
+
+    sprintf(responseHeader, "HTTP/1.0 %d %s\n", 200, "OK");
+    sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", LOCATION);
+    sprintf(responseHeader + strlen(responseHeader), "Content-type: text/html; charset=UTF-8\n");
+    sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", fileSize);
+
+    write(sockfd, responseHeader, strlen(responseHeader));
 
     printf("Sending file %s\n", filePath);
     printf("FILE %p\n", f);
