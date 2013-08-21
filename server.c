@@ -23,15 +23,30 @@ void sendFile(char file[100], int sockfd){
 
     char filePath[100] = DOC_ROOT;
     strcat(filePath, file);
-    FILE *f = fopen(filePath, "r");
-
-    fseek(f, 0, SEEK_END);
-    int fileSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    
+    int statusCode = 200, fileSize;
+    char* statusName = "OK";
+    FILE *f = NULL;
 
     char responseHeader[1000];
+    if(access(filePath, F_OK) != 0){
+        statusCode = 404;
+        statusName = "Not Found";
+        strcpy(filePath, "./not_found");
+    }else if(access(filePath, R_OK) != 0){
+        statusCode = 403;
+        statusName = "Forbidden";
+        strcpy(filePath, "./forbidden");
+    }
+    printf("Status: %d\n", statusCode);
 
-    sprintf(responseHeader, "HTTP/1.0 %d %s\n", 200, "OK");
+    f = fopen(filePath, "r");
+
+    fseek(f, 0, SEEK_END);
+    fileSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    sprintf(responseHeader, "HTTP/1.0 %d %s\n", statusCode, statusName); 
     sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", LOCATION);
     sprintf(responseHeader + strlen(responseHeader), "Content-type: text/html; charset=UTF-8\n");
     sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", fileSize);
