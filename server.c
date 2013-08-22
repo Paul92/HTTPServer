@@ -12,49 +12,41 @@
 
 #define PORT 80
 
+#if 1
 # define ERR_LOG(fmt, args...) fprintf(stderr, "%s (%d) in %s(): ", \
                 __FILE__, __LINE__, __FUNCTION__); \
         fprintf(stderr, fmt, ## args)
+#else
+# define ERR_LOG(fmt, args...)
+#endif
 
 #define DOC_ROOT "."
 #define LOCATION "localhost"
 
-void sendFile(char file[100], int sockfd){
+struct headerValue{
+    int code;
+    char* codeName;
+    char* location;
+    char* contentType;
+    char* charset;
+    int fileSize;
+};
 
-    char filePath[100] = DOC_ROOT;
-    strcat(filePath, file);
-    
-    int statusCode = 200, fileSize;
-    char* statusName = "OK";
-    FILE *f = NULL;
+void sendHeaders(struct headerValue headers, int sockfd){
 
     char responseHeader[1000];
-    if(access(filePath, F_OK) != 0){
-        statusCode = 404;
-        statusName = "Not Found";
-        strcpy(filePath, "./not_found");
-    }else if(access(filePath, R_OK) != 0){
-        statusCode = 403;
-        statusName = "Forbidden";
-        strcpy(filePath, "./forbidden");
-    }
-    printf("Status: %d\n", statusCode);
 
-    f = fopen(filePath, "r");
-
-    fseek(f, 0, SEEK_END);
-    fileSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    sprintf(responseHeader, "HTTP/1.0 %d %s\n", statusCode, statusName); 
-    sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", LOCATION);
-    sprintf(responseHeader + strlen(responseHeader), "Content-type: text/html; charset=UTF-8\n");
-    sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", fileSize);
+    sprintf(responseHeader, "HTTP/1.0 %d %s\n", headers.code, headers.codeName); 
+    sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", headers.location);
+    sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s\n", headers.contentType, headers.charset);
+    sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", headers.fileSize);
 
     write(sockfd, responseHeader, strlen(responseHeader));
 
-    printf("Sending file %s\n", filePath);
-    printf("FILE %p\n", f);
+}
+
+void sendFile(FILE *f, int sockfd){
+
     char character;
     while(!feof(f)){
         fscanf(f, "%c", &character);
@@ -66,12 +58,47 @@ void sendFile(char file[100], int sockfd){
 
 }
 
+void staticHandler(char file[100], int sockfd){
+
+    char filePath[100] = DOC_ROOT;
+    strcat(filePath, file);
+    
+    struct headerValue headers;         //defaults
+    headers.code = 200;
+    headers.codeName = "OK";
+    headers.location = LOCATION;
+    headers.contentType = "text/html";
+    headers.charset = "UTF-8";
+
+    FILE *f = NULL;
+
+    if(access(filePath, F_OK) != 0){
+        headers.code = 404;
+        headers.codeName = "Not Found";
+        strcpy(filePath, "./not_found");
+    }else if(access(filePath, R_OK) != 0){
+        headers.code = 403;
+        headers.codeName = "Forbidden";
+        strcpy(filePath, "./forbidden");
+    }else if(strcmp(file, "/") == 0){
+        f = popen("/bin/ls", "r");
+        FILE *p = popen("ls | wc -c", "r");  //another pipe for finding size
+        fscanf(p, "%d", &headers.fileSize);
+        pclose(p);
+    }else{
+        f = fopen(filePath, "r");
+        fseek(f, 0, SEEK_END);
+        headers.fileSize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+    }
+    sendHeaders(headers, sockfd);
+    sendFile(f, sockfd);
+}
 
 void parse(char request[1000], int sockfd){
     char data[100];
     sscanf(request, "%s", data);
     int n = strlen(data) + 1;
-    printf("%d\n", n);
     if(strcmp(data, "GET") == 0){
         char file[100];
         sscanf(request + n, "%s", file);
@@ -83,7 +110,7 @@ void parse(char request[1000], int sockfd){
         }else if(strcmp(file, "/verifica") == 0){
 
         }else{
-            sendFile(file, sockfd);
+            staticHandler(file, sockfd);
         }
     }
 }
@@ -131,6 +158,7 @@ int server(){
             }
             
         }
+        printf("ended\n");
     }
 
     return 0;
