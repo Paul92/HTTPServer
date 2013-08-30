@@ -22,8 +22,20 @@
 
 #define DOC_ROOT "."
 #define LOCATION "localhost"
+#define REQUEST_MAX_SIZE 8192
+#define MAX_URI_SIZE 255
 
-struct headerValue{
+struct HTTPRequest{
+    char *method;    //GET POST or HEAD
+    char *uri;
+    char *authorization;
+    char *from;
+    char *ifModifiedSince;
+    char *referer;
+    char *userAgent;
+};
+
+struct responseHeaders{
     int code;
     char* codeName;
     char* location;
@@ -32,7 +44,8 @@ struct headerValue{
     int fileSize;
 };
 
-void sendHeaders(struct headerValue headers, int sockfd){
+
+void sendHeaders(struct responseHeaders headers, int sockfd){
 
     char responseHeader[1000];
 
@@ -58,17 +71,12 @@ void sendFile(FILE *f, int sockfd){
 
 }
 
-void staticHandler(char file[100], int sockfd){
+void staticHandler(struct HTTPRequest *request, int sockfd){
 
-    char filePath[100] = DOC_ROOT;
-    strcat(filePath, file);
+    char filePath[MAX_URI_SIZE] = DOC_ROOT;
+    strcat(filePath, request -> uri);
     
-    struct headerValue headers;         //defaults
-    headers.code = 200;
-    headers.codeName = "OK";
-    headers.location = LOCATION;
-    headers.contentType = "text/html";
-    headers.charset = "UTF-8";
+    struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};         //defaults
 
     FILE *f = NULL;
 
@@ -80,7 +88,7 @@ void staticHandler(char file[100], int sockfd){
         headers.code = 403;
         headers.codeName = "Forbidden";
         strcpy(filePath, "./forbidden");
-    }else if(strcmp(file, "/") == 0){
+    }else if(strcmp(request -> uri, "/") == 0){
         f = popen("/bin/ls", "r");
         FILE *p = popen("ls | wc -c", "r");  //another pipe for finding size
         fscanf(p, "%d", &headers.fileSize);
@@ -95,24 +103,53 @@ void staticHandler(char file[100], int sockfd){
     sendFile(f, sockfd);
 }
 
-void parse(char request[1000], int sockfd){
-    char data[100];
-    sscanf(request, "%s", data);
-    int n = strlen(data) + 1;
-    if(strcmp(data, "GET") == 0){
-        char file[100];
-        sscanf(request + n, "%s", file);
-        n += strlen(file) + 1;
-        if(strcmp(file, "/patrat") == 0){
+void dynamicHandler(struct HTTPRequest *request, int sockfd){
+    printf("CRAP");
+}
 
-        }else if(strcmp(file, "/login") == 0){
+void gotoNextLine(char *buffer){
+    while(*buffer != '\n')
+        buffer++;
+    while(*buffer == '\n' || *buffer == '\r')
+        buffer++;
+}
 
-        }else if(strcmp(file, "/verifica") == 0){
+struct HTTPRequest* parseHTTPRequest(char *buffer){
+    struct HTTPRequest* req = malloc(sizeof(struct HTTPRequest));
+    sscanf(buffer, "%s %s", req->method, req->uri); 
+    buffer += strlen(req -> method) + strlen(req -> uri);
+    gotoNextLine(buffer);
 
-        }else{
-            staticHandler(file, sockfd);
-        }
+    if(strncmp(buffer, "Authorization", strlen("Authorization")) == 0){
+        sscanf(buffer + strlen("Authorization") + 2, "%s", req -> authorization);
+        gotoNextLine(buffer);
     }
+    if(strncmp(buffer, "From", strlen("From")) == 0){
+        sscanf(buffer + strlen("From") + 2, "%s", req -> from);
+        gotoNextLine(buffer);
+    }
+    if(strncmp(buffer, "If-Modified-Since", strlen("If-Modified-Since")) == 0){
+        sscanf(buffer + strlen("If-Modified-Since") + 2, "%s", req -> ifModifiedSince);
+        gotoNextLine(buffer);
+    }
+    if(strncmp(buffer, "Referer", strlen("Referer")) == 0){
+        sscanf(buffer + strlen("Referer") + 2, "%s", req -> referer);
+        gotoNextLine(buffer);
+    }
+    if(strncmp(buffer, "User-Agent", strlen("User-Agent")) == 0){
+        sscanf(buffer + strlen("User-Agent") + 2, "%s", req -> userAgent);
+        gotoNextLine(buffer);
+    }
+
+    return req;
+
+}
+
+void requestHandler(struct HTTPRequest *request, int sockfd){
+    if(strcmp(request -> uri, "/login") == 0 || strcmp(request -> uri, "/verifica") == 0)
+        dynamicHandler(request, sockfd);
+    else
+        staticHandler(request, sockfd);
 }
 
 int server(){
@@ -142,21 +179,11 @@ int server(){
         if(newsockfd < 0){
             ERR_LOG("Error on accept");
         }else{
-            char request[1000];
-            int requestIndex=0;
-            char data;
-            int ok=1;
-            while(ok){
-                read(newsockfd, &data, 1);
-                request[requestIndex++] = data;
-                if(data == '\n'){
-                    parse(request, newsockfd);
-                    requestIndex=0;
-                    ok=0;
-                }
-
-            }
-            
+            char request[REQUEST_MAX_SIZE];
+            read(newsockfd, request, REQUEST_MAX_SIZE);
+            struct HTTPRequest *requestStruct;
+            requestStruct = parseHTTPRequest(request);
+            requestHandler(requestStruct, newsockfd);
         }
         printf("ended\n");
     }
