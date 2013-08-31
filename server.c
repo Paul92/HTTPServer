@@ -23,16 +23,16 @@
 #define DOC_ROOT "."
 #define LOCATION "localhost"
 #define REQUEST_MAX_SIZE 8192
-#define MAX_URI_SIZE 255
+#define MAX_URI_SIZE 256
+#define MAX_REQUEST_LINE 256
+#define RESPONSE_SIZE 1024
+#define INF 2147483647
 
 struct HTTPRequest{
-    char *method;    //GET POST or HEAD
-    char *uri;
-    char *authorization;
-    char *from;
-    char *ifModifiedSince;
-    char *referer;
-    char *userAgent;
+    char method[MAX_REQUEST_LINE];    //GET POST or HEAD
+    char uri[MAX_REQUEST_LINE];
+    char host[MAX_REQUEST_LINE];
+    char userAgent[MAX_REQUEST_LINE];
 };
 
 struct responseHeaders{
@@ -43,7 +43,6 @@ struct responseHeaders{
     char* charset;
     int fileSize;
 };
-
 
 void sendHeaders(struct responseHeaders headers, int sockfd){
 
@@ -103,42 +102,62 @@ void staticHandler(struct HTTPRequest *request, int sockfd){
     sendFile(f, sockfd);
 }
 
-void dynamicHandler(struct HTTPRequest *request, int sockfd){
-    printf("CRAP");
+char *patrat(char uri[MAX_REQUEST_LINE]){
+
+    while(*uri!='?')
+        uri++;
+
+    uri++;  // to remove '?' too
+
+    char *response = malloc(RESPONSE_SIZE);
+
+    int val = INF;
+    int ret = sscanf(uri, "a=%d", &val);
+
+    if(ret == 0 || val == INF)
+        strcpy(response, "<html>A avut loc o eroare</html>");
+    else
+        sprintf(response, "<html>Patratul lui %d este %d</html>", val, val*val);
+
+    return response;
 }
 
-void gotoNextLine(char *buffer){
-    while(*buffer != '\n')
-        buffer++;
+
+void dynamicHandler(struct HTTPRequest *request, int sockfd){
+    struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};
+    char *response;
+    if(strncmp(request -> uri, "/patrat", 7) == 0){
+        response = patrat(request -> uri);
+    }
+    headers.fileSize = strlen(response);
+    sendHeaders(headers, sockfd);
+    write(sockfd, response, headers.fileSize);
+
+}
+
+char* gotoNextLine(char *buffer){
+    while(*buffer != '\n'){
+        *buffer++;
+    }
     while(*buffer == '\n' || *buffer == '\r')
-        buffer++;
+        *buffer++;
+    return buffer;
 }
 
 struct HTTPRequest* parseHTTPRequest(char *buffer){
     struct HTTPRequest* req = malloc(sizeof(struct HTTPRequest));
     sscanf(buffer, "%s %s", req->method, req->uri); 
     buffer += strlen(req -> method) + strlen(req -> uri);
-    gotoNextLine(buffer);
+    buffer = gotoNextLine(buffer);
 
-    if(strncmp(buffer, "Authorization", strlen("Authorization")) == 0){
-        sscanf(buffer + strlen("Authorization") + 2, "%s", req -> authorization);
-        gotoNextLine(buffer);
+    if(strncmp(buffer, "Host", strlen("Host")) == 0){
+        sscanf(buffer + strlen("Host") + 2, "%[^\n]", req -> host);    //+2 for : and space after the name of the request header
+        buffer = gotoNextLine(buffer);
     }
-    if(strncmp(buffer, "From", strlen("From")) == 0){
-        sscanf(buffer + strlen("From") + 2, "%s", req -> from);
-        gotoNextLine(buffer);
-    }
-    if(strncmp(buffer, "If-Modified-Since", strlen("If-Modified-Since")) == 0){
-        sscanf(buffer + strlen("If-Modified-Since") + 2, "%s", req -> ifModifiedSince);
-        gotoNextLine(buffer);
-    }
-    if(strncmp(buffer, "Referer", strlen("Referer")) == 0){
-        sscanf(buffer + strlen("Referer") + 2, "%s", req -> referer);
-        gotoNextLine(buffer);
-    }
+
     if(strncmp(buffer, "User-Agent", strlen("User-Agent")) == 0){
-        sscanf(buffer + strlen("User-Agent") + 2, "%s", req -> userAgent);
-        gotoNextLine(buffer);
+        sscanf(buffer + strlen("User-Agent") + 2, "%[^\n]", req -> userAgent);
+        buffer = gotoNextLine(buffer);
     }
 
     return req;
@@ -146,7 +165,8 @@ struct HTTPRequest* parseHTTPRequest(char *buffer){
 }
 
 void requestHandler(struct HTTPRequest *request, int sockfd){
-    if(strcmp(request -> uri, "/login") == 0 || strcmp(request -> uri, "/verifica") == 0)
+    printRequest(request);
+    if(strncmp(request -> uri, "/patrat", 7) == 0 || strcmp(request -> uri, "/login") == 0 || strcmp(request -> uri, "/verifica") == 0)
         dynamicHandler(request, sockfd);
     else
         staticHandler(request, sockfd);
@@ -185,7 +205,6 @@ int server(){
             requestStruct = parseHTTPRequest(request);
             requestHandler(requestStruct, newsockfd);
         }
-        printf("ended\n");
     }
 
     return 0;
