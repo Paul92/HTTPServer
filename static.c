@@ -10,6 +10,7 @@
 
 void sendFile(FILE *f, int sockfd){
 
+    printf("So we're sending file....\n");
     char character;
     while(!feof(f)){
         fscanf(f, "%c", &character);
@@ -25,7 +26,7 @@ void staticHandler(struct HTTPRequest *request, int sockfd){
 
     char filePath[MAX_URI_SIZE] = DOC_ROOT;
     strcat(filePath, request -> uri);
-    
+
     struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};         //defaults
 
     FILE *f = NULL;
@@ -43,12 +44,17 @@ void staticHandler(struct HTTPRequest *request, int sockfd){
         FILE *p = popen("ls | wc -c", "r");  //another pipe for finding size
         fscanf(p, "%d", &headers.fileSize);
         pclose(p);
-    }else{
+    }
+    printf("Opening file %s\n", filePath);
+    if(f == NULL){
         f = fopen(filePath, "r");
         fseek(f, 0, SEEK_END);
         headers.fileSize = ftell(f);
         fseek(f, 0, SEEK_SET);
     }
+
+    printf("Sending headers...\n");
     sendHeaders(headers, sockfd);
+    printf("Sending file: %s\n", filePath);
     sendFile(f, sockfd);
 }
