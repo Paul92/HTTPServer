@@ -1,14 +1,17 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
-#define MAX_REQUEST_LINE 256
+#define MAX_REQUEST 256
 
-struct HTTPRequest{
-    char method[MAX_REQUEST_LINE];    //GET POST or HEAD
-    char uri[MAX_REQUEST_LINE];
-    char host[MAX_REQUEST_LINE];
-    char userAgent[MAX_REQUEST_LINE];
+struct headers{
+    char *keys[MAX_REQUEST];
+    char *values[MAX_REQUEST];
 };
+
+void initHeaders(struct headers*);
+int setHeader(struct headers*, const char*, const char*);
+char* getHeader(struct headers*, const char*);
+void printHeaders(struct headers*);
 
 struct responseHeaders{
     int code;

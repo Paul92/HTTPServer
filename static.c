@@ -22,10 +22,11 @@ void sendFile(FILE *f, int sockfd){
 
 }
 
-void staticHandler(struct HTTPRequest *request, int sockfd){
+void staticHandler(struct headers *request, int sockfd){
 
     char filePath[MAX_URI_SIZE] = DOC_ROOT;
-    strcat(filePath, request -> uri);
+    char *uri = getHeader(request, "URI");
+    strcat(filePath, uri);
 
     struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};         //defaults
 
@@ -39,7 +40,7 @@ void staticHandler(struct HTTPRequest *request, int sockfd){
         headers.code = 403;
         headers.codeName = "Forbidden";
         strcpy(filePath, "./forbidden");
-    }else if(strcmp(request -> uri, "/") == 0){
+    }else if(strcmp(uri, "/") == 0){
         f = popen("/bin/ls", "r");
         FILE *p = popen("ls | wc -c", "r");  //another pipe for finding size
         fscanf(p, "%d", &headers.fileSize);

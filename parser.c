@@ -13,20 +13,27 @@ char* gotoNextLine(char *buffer){
     return buffer;
 }
 
-struct HTTPRequest* parseHTTPRequest(char *buffer){
-    struct HTTPRequest* req = malloc(sizeof(struct HTTPRequest));
-    sscanf(buffer, "%s %s", req->method, req->uri); 
-    buffer += strlen(req -> method) + strlen(req -> uri);
+struct headers* parseHTTPRequest(char *buffer){
+
+    struct headers* req = malloc(sizeof(struct headers));
+    initHeaders(req);
+
+    char key[1024], val[1024];
+
+    sscanf(buffer, "%s", val); 
+    setHeader(req, "Method", val);
+    sscanf(buffer, "%s", val); 
+    setHeader(req, "URI", val);
+    sscanf(buffer, "%s", val); 
+    setHeader(req, "HTTP Version", val);
+
     buffer = gotoNextLine(buffer);
 
-    if(strncmp(buffer, "Host", strlen("Host")) == 0){
-        sscanf(buffer + strlen("Host") + 2, "%[^\n]", req -> host);    //+2 for : and space after the name of the request header
-        buffer = gotoNextLine(buffer);
-    }
+    while(*buffer != '\0'){
+        sscanf(buffer, "%[^:: %[^\n", key, val);
+        setHeader(req, key, val);
 
-    if(strncmp(buffer, "User-Agent", strlen("User-Agent")) == 0){
-        sscanf(buffer + strlen("User-Agent") + 2, "%[^\n]", req -> userAgent);
-        buffer = gotoNextLine(buffer);
+        gotoNextLine(buffer);
     }
 
     return req;

@@ -1,6 +1,6 @@
 #ifndef STATIC_H
 #define STATIC_H
 
-void staticHandler(struct HTTPRequest *, int);
+void staticHandler(struct headers*, int);
 
 #endif

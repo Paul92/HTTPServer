@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "structs.h"
 #include "dynamic.h"
 
@@ -7,7 +8,7 @@
 #define RESPONSE_SIZE 1024
 #define INF 214748364
 
-char *patrat(char uri[MAX_REQUEST_LINE]){
+char *patrat(char* uri){
 
     while(*uri!='?')
         uri++;
@@ -28,11 +29,12 @@ char *patrat(char uri[MAX_REQUEST_LINE]){
 }
 
 
-void dynamicHandler(struct HTTPRequest *request, int sockfd){
+void dynamicHandler(struct headers *request, int sockfd){
     struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};
     char *response;
-    if(strncmp(request -> uri, "/patrat", 7) == 0){
-        response = patrat(request -> uri);
+    char *uri = getHeader(request, "URI");
+    if(strncmp(uri, "/patrat", 7) == 0){
+        response = patrat(uri);
     }
     headers.fileSize = strlen(response);
     sendHeaders(headers, sockfd);

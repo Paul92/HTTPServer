@@ -2,6 +2,6 @@
 #define PARSER_H
 
 char* gotoNextLine(char *);
-struct HTTPRequest* parseHTTPRequest(char *);
+struct headers* parseHTTPRequest(char *);
 
 #endif

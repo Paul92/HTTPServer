@@ -39,8 +39,9 @@ void sendHeaders(struct responseHeaders headers, int sockfd){
 
 }
 
-void requestHandler(struct HTTPRequest *request, int sockfd){
-    if(strncmp(request -> uri, "/patrat", 7) == 0 || strcmp(request -> uri, "/login") == 0 || strcmp(request -> uri, "/verifica") == 0){
+void requestHandler(struct headers *request, int sockfd){
+    char *uri = getHeader(request, "URI");
+    if(strncmp(uri, "/patrat", 7) == 0 || strcmp(uri, "/login") == 0 || strcmp(uri, "/verifica") == 0){
         printf("It's a dynamic request\n");
         dynamicHandler(request, sockfd);
     }else{
@@ -79,7 +80,7 @@ int server(){
             char request[REQUEST_MAX_SIZE];
             read(newsockfd, request, REQUEST_MAX_SIZE);
             printf("New request\n");
-            struct HTTPRequest *requestStruct;
+            struct headers *requestStruct;
             requestStruct = parseHTTPRequest(request);
             printf("Parsed\n");
             requestHandler(requestStruct, newsockfd);
