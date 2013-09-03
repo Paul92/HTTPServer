@@ -30,7 +30,7 @@ int setHeader(struct headers *heads, const char *key, const char *val){
 char* getHeader(struct headers *heads, const char *key){
     int i;
     for(i = 0; heads -> keys[i] != NULL && strcmp(heads -> keys[i], key); i++);
-    return heads -> keys[i];
+    return heads -> values[i];
 }
 
 void printHeaders(struct headers *heads){
@@ -38,6 +38,7 @@ void printHeaders(struct headers *heads){
 
     while(heads -> keys[i] != NULL){
         printf("%d %s %s\n", i, heads -> keys[i], heads -> values[i]);
+        i++;
     }
 }
 

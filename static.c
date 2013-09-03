@@ -25,7 +25,7 @@ void sendFile(FILE *f, int sockfd){
 void staticHandler(struct headers *request, int sockfd){
 
     char filePath[MAX_URI_SIZE] = DOC_ROOT;
-    char *uri = getHeader(request, "URI");
+    char *uri = getHeader(request, "URI:");
     strcat(filePath, uri);
 
     struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};         //defaults

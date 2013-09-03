@@ -21,19 +21,22 @@ struct headers* parseHTTPRequest(char *buffer){
     char key[1024], val[1024];
 
     sscanf(buffer, "%s", val); 
-    setHeader(req, "Method", val);
+    setHeader(req, "Method:", val);
+    buffer += strlen(val) + 1;
     sscanf(buffer, "%s", val); 
-    setHeader(req, "URI", val);
+    setHeader(req, "URI:", val);
+    buffer += strlen(val) + 1;
     sscanf(buffer, "%s", val); 
-    setHeader(req, "HTTP Version", val);
+    setHeader(req, "HTTP-Version:", val);
+    buffer += strlen(val);
 
     buffer = gotoNextLine(buffer);
 
     while(*buffer != '\0'){
-        sscanf(buffer, "%[^:: %[^\n", key, val);
+        sscanf(buffer, "%s %[^\n]", key, val);
         setHeader(req, key, val);
 
-        gotoNextLine(buffer);
+        buffer = gotoNextLine(buffer);
     }
 
     return req;
