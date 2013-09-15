@@ -51,11 +51,17 @@ void requestHandler(struct headers *request, int sockfd){
     }
 }
 
+void shutdownDaemon(){
+    exit(1);
+}
+
+
 int server(){
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd<0){
         ERR_LOG("Error creating socket");
+        shutdownDaemon();
     }
     
     struct sockaddr_in serv_addr, cli_addr;
@@ -67,6 +73,7 @@ int server(){
 
     if(bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
         ERR_LOG("Error on binding");
+        shutdownDaemon();
     }
 
     listen(sockfd, 5);
@@ -77,6 +84,7 @@ int server(){
         int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &cilen);
         if(newsockfd < 0){
             ERR_LOG("Error on accept");
+            shutdownDaemon();
         }else{
             char request[REQUEST_MAX_SIZE];
             read(newsockfd, request, REQUEST_MAX_SIZE);
