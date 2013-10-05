@@ -42,6 +42,14 @@ void SIGCHLD_handler(int sig){
 
 }
 
+void SIGINT_handler(int sig){
+
+    ERR_LOG("Shutdown command\n");
+
+    pid_t groupPid = getpgrp();
+    kill((-1)*groupPid, SIGTERM);
+}
+
 void sendHeaders(struct responseHeaders headers, int sockfd){
 
     char responseHeader[1000];
@@ -114,7 +122,8 @@ int server(){
 }
 
 int main(int argc, char** argv){
-    if(signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR){
+    if(signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR || 
+       signal(SIGINT,  SIGINT_handler ) == SIG_ERR){
         ERR_LOG("Signal error\n");
         shutdownDaemon(1);
     }
