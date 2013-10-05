@@ -5,6 +5,8 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -34,7 +36,9 @@ void SIGCHLD_handler(int sig){
 
     pid_t pid;
 
-    while((pid = waitpid(-1, NULL, 0)) < 0);
+    while((pid = waitpid(-1, NULL, 0)) > 0){
+        printf("Reaped %d\n", pid);
+    }
     if(errno != ECHILD){
         ERR_LOG("waitpid error\n");
         shutdownDaemon();
@@ -106,6 +110,12 @@ int server(){
             ERR_LOG("Error on accept");
             shutdownDaemon();
         }else{
+            pid_t pid = fork();
+            printf("New process %d\n", pid);
+            if(pid < 0){
+                ERR_LOG("Error on fork\n");
+                shutdownDaemon();
+            }
             char request[REQUEST_MAX_SIZE];
             read(newsockfd, request, REQUEST_MAX_SIZE);
             printf("New request\n");
