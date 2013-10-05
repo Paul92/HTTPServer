@@ -26,6 +26,22 @@
 
 #define REQUEST_MAX_SIZE 8192
 
+void shutdownDaemon(){
+    exit(1);
+}
+
+void SIGCHLD_handler(int sig){
+
+    pid_t pid;
+
+    while((pid = waitpid(-1, NULL, 0)) < 0);
+    if(errno != ECHILD){
+        ERR_LOG("waitpid error\n");
+        shutdownDaemon();
+    }
+
+}
+
 void sendHeaders(struct responseHeaders headers, int sockfd){
 
     char responseHeader[1000];
@@ -41,8 +57,9 @@ void sendHeaders(struct responseHeaders headers, int sockfd){
 
 void requestHandler(struct headers *request, int sockfd){
     char *uri = getHeader(request, "URI:");
+    printf("URI: %s\n", uri);
 
-    if(strncmp(uri, "/patrat", 7) == 0 || strcmp(uri, "/login") == 0 || strcmp(uri, "/verifica") == 0){
+    if(strstr(uri, ".php")){
         printf("It's a dynamic request\n");
         dynamicHandler(request, sockfd);
     }else{
@@ -50,11 +67,6 @@ void requestHandler(struct headers *request, int sockfd){
         staticHandler(request, sockfd);
     }
 }
-
-void shutdownDaemon(){
-    exit(1);
-}
-
 
 int server(){
 
@@ -102,6 +114,10 @@ int server(){
 }
 
 int main(int argc, char** argv){
+    if(signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR){
+        ERR_LOG("Signal error\n");
+        shutdownDaemon(1);
+    }
     server();
     return 0;
 }
