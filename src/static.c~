@@ -1,12 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "structs.h"
-
-#define MAX_URI_SIZE 256
-#define MAX_REQUEST_LINE 256
-#define DOC_ROOT "."
-#define LOCATION "localhost"
+#include "include/structs.h"
+#include "include/constants.h"
 
 void sendFile(FILE *f, int sockfd){
 

@@ -2,14 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "structs.h"
+#include "include/structs.h"
 
 void initHeaders(struct headers *heads){
     heads -> keys[0] = NULL;
     heads -> values[0] = NULL;
 }
 
-int setHeader(struct headers *heads, const char *key, const char *val){
+void setHeader(struct headers *heads, const char *key, const char *val){
     int keySize = strlen(key);
     int valSize = strlen(val);
 

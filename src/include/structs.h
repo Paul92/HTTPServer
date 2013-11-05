@@ -9,7 +9,7 @@ struct headers{
 };
 
 void initHeaders(struct headers*);
-int setHeader(struct headers*, const char*, const char*);
+void setHeader(struct headers*, const char*, const char*);
 char* getHeader(struct headers*, const char*);
 void printHeaders(struct headers*);
 

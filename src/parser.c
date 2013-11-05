@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "structs.h"
-#include "parser.h"
+#include "include/structs.h"
+#include "include/parser.h"
 
 char* gotoNextLine(char *buffer){
     while(*buffer != '\n'){

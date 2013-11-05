@@ -11,10 +11,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include "structs.h"
-#include "parser.h"
-#include "static.h"
-#include "dynamic.h"
+#include "include/structs.h"
+#include "include/parser.h"
+#include "include/static.h"
+#include "include/dynamic.h"
 
 #define PORT 80
 

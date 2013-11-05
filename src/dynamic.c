@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "structs.h"
-#include "static.h"
-#include "dynamic.h"
-#include "constants.h"
+#include "include/structs.h"
+#include "include/static.h"
+#include "include/dynamic.h"
+#include "include/constants.h"
 
 void dynamicHandler(struct headers *request, int sockfd){
     struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};
