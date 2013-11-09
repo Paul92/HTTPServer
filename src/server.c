@@ -97,21 +97,23 @@ int server(){
             ERR_LOG("Error on accept");
             shutdownDaemon();
         }else{
+            printf("New request\n");
             pid_t pid = fork();
-            printf("New process %d\n", pid);
             if(pid < 0){
                 ERR_LOG("Error on fork\n");
                 shutdownDaemon();
             }
-            char request[REQUEST_MAX_SIZE];
-            read(newsockfd, request, REQUEST_MAX_SIZE);
-            printf("New request\n");
-            struct headers *requestStruct;
-            printf("Parsing...\n");
-            requestStruct = parseHTTPRequest(request);
-            printf("Parsed\n");
-            requestHandler(requestStruct, newsockfd);
-            printf("Handled. Wainting for a new one\n");
+            if(pid > 0){
+                printf("New process %d\n", pid);
+                char request[REQUEST_MAX_SIZE];
+                read(newsockfd, request, REQUEST_MAX_SIZE);
+                struct headers *requestStruct;
+                printf("Parsing...\n");
+                requestStruct = parseHTTPRequest(request);
+                printf("Parsed\n");
+                requestHandler(requestStruct, newsockfd);
+                printf("Handled. Wainting for a new one\n");
+            }
         }
     }
 

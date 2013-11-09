@@ -14,27 +14,27 @@ void dynamicHandler(struct headers *request, int sockfd){
     char filePath[MAX_URI_SIZE] = DOC_ROOT;
     strcat(filePath, uri);
 
+    printf("Computed filepath %s\n", filePath);
+
     char *end = strchr(filePath, '?');
     if(end) *end = '\0';
 
     char* bias = strchr(uri, '?');
     if(bias) bias++;
 
-    printf("%s\n", bias);
     char* space;
     while(bias && (space = strchr(bias, '&'))){
         *space = ' ';
     }
 
-    printf("%s\n", bias);
-    printf("CMD\n");
-
     char cmd[MAX_CLI_COMMAND] = "php-cgi -f ";
     strcat(cmd, filePath);
-    strcat(cmd, " ");
-    strcat(cmd, bias);
+    if(bias){
+        strcat(cmd, " ");
+        strcat(cmd, bias);
+    }
 
-    printf("CMD: %s", cmd);
+    printf("CMD: %s\n", cmd);
 
     FILE *f = popen(cmd, "r");
     if(f != NULL){
@@ -46,7 +46,6 @@ void dynamicHandler(struct headers *request, int sockfd){
     sendHeaders(headers, sockfd);
 
     sendFile(f, sockfd);
-
 
 }
 
