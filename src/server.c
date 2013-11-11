@@ -103,7 +103,8 @@ int server(){
                 ERR_LOG("Error on fork\n");
                 shutdownDaemon();
             }
-            if(pid > 0){
+            printf("Port %d\n", newsockfd);
+            if(pid == 0){
                 printf("New process %d\n", pid);
                 char request[REQUEST_MAX_SIZE];
                 read(newsockfd, request, REQUEST_MAX_SIZE);
@@ -112,9 +113,8 @@ int server(){
                 requestStruct = parseHTTPRequest(request);
                 printf("Parsed\n");
                 requestHandler(requestStruct, newsockfd);
+                exit(0);
             }
-            printf("Waiting...\n");
-            wait(NULL);
             close(newsockfd);
         }
     }

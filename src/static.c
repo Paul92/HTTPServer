@@ -14,7 +14,6 @@ void sendFile(FILE *f, int sockfd){
             write(sockfd, &character, 1);
         }
     }
-    close(sockfd);
 
 }
 

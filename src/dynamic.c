@@ -28,6 +28,8 @@ void dynamicHandler(struct headers *request, int sockfd){
         bias++;
     }
 
+    printf("Opening file: %s\n", filePath);
+
     char* cmd = "/bin/php-cgi";
     char *argv[] = {cmd, "-f", filePath, NULL};
     extern char **environ;
@@ -35,7 +37,8 @@ void dynamicHandler(struct headers *request, int sockfd){
     if(bias)
         setenv("QUERY_STRINGS", bias, 1);
     dup2(sockfd, STDOUT_FILENO);
-    execve(cmd, argv, environ);
+    if(execve(cmd, argv, environ) == -1)
+        printf("Something went wrong\n");
 
 }
 
