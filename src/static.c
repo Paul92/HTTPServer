@@ -25,7 +25,8 @@ void sendHeaders(struct responseHeaders headers, int sockfd){
     sprintf(responseHeader, "HTTP/1.0 %d %s\n", headers.code, headers.codeName); 
     sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", headers.location);
     sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s\n", headers.contentType, headers.charset);
-    sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", headers.fileSize);
+    if(headers.sendLength)
+        sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", headers.fileSize);
 
     write(sockfd, responseHeader, strlen(responseHeader));
 
@@ -37,7 +38,7 @@ void staticHandler(struct headers *request, int sockfd){
     char *uri = getHeader(request, "URI:");
     strcat(filePath, uri);
 
-    struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0};         //defaults
+    struct responseHeaders headers = {200, "OK", LOCATION, "text/html", "UTF-8", 0, false};         //defaults
 
     FILE *f = NULL;
 

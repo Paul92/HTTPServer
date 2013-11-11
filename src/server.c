@@ -112,8 +112,10 @@ int server(){
                 requestStruct = parseHTTPRequest(request);
                 printf("Parsed\n");
                 requestHandler(requestStruct, newsockfd);
-                printf("Handled. Wainting for a new one\n");
             }
+            printf("Waiting...\n");
+            wait(NULL);
+            close(newsockfd);
         }
     }
 

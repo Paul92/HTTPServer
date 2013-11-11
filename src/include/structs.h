@@ -20,6 +20,10 @@ struct responseHeaders{
     char* contentType;
     char* charset;
     int fileSize;
+    int sendLength;
 };
+
+#define false 0
+#define true 1
 
 #endif
