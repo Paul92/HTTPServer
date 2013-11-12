@@ -23,7 +23,7 @@ void sendHeaders(struct responseHeaders headers, int sockfd){
 
     sprintf(responseHeader, "HTTP/1.0 %d %s\n", headers.code, headers.codeName); 
     sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", headers.location);
-    sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s\n", headers.contentType, headers.charset);
+    sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s\n\r\n", headers.contentType, headers.charset);
     if(headers.sendLength)
         sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", headers.fileSize);
 
