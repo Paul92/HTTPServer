@@ -23,19 +23,26 @@ void dynamicHandler(struct headers *request, int sockfd){
     char *end = strchr(filePath, '?');
     if(end) *end = '\0';
 
-    char* bias = strchr(uri, '?');
-    if(bias){
-        bias++;
+    char* GetParams = strchr(uri, '?');
+    if(GetParams){
+        GetParams++;
     }
 
-    printf("Opening file: %s\n", filePath);
-
     char* cmd = "/bin/php-cgi";
-    char *argv[] = {cmd, "-f", filePath, NULL};
+    char *argv[] = {cmd,  filePath, NULL};
     extern char **environ;
 
-    if(bias)
-        setenv("QUERY_STRINGS", bias, 1);
+    setenv("QUERY_STRING", GetParams, 1);
+    setenv("REQUEST_METHOD", "GET", 1);
+    setenv("REDIRECT_STATUS", "200", 1);
+    setenv("GATEWAY_INTERFACE", "GGI/1.1", 1);
+    setenv("SERVER_PROTOCOL", "HTTP/1.0", 1);
+    setenv("SCRIPT_FILENAME", filePath, 1);
+    setenv("SCRIPT_NAME", filePath+strlen(DOC_ROOT), 1);
+    setenv("REQUEST_URI", strchr(uri, '/'), 1);
+    setenv("DOCUMENT_ROOT", DOC_ROOT, 1);
+
+    printf("Args: %s\n", GetParams);
     dup2(sockfd, STDOUT_FILENO);
     if(execve(cmd, argv, environ) == -1)
         printf("Something went wrong\n");
