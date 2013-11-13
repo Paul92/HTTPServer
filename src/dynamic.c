@@ -16,7 +16,6 @@ void dynamicHandler(struct headers *request, int sockfd){
     sendHeaders(headers, sockfd);
 
     char *uri = getHeader(request, "URI:");
-    printf("URI %s\n", uri);
 
     char filePath[MAX_URI_SIZE] = DOC_ROOT;
     strcat(filePath, uri);
@@ -42,7 +41,6 @@ void dynamicHandler(struct headers *request, int sockfd){
     setenv("REQUEST_URI", strchr(uri, '/'), 1);
     setenv("DOCUMENT_ROOT", DOC_ROOT, 1);
 
-    printf("Args: %s\n", GetParams);
     dup2(sockfd, STDOUT_FILENO);
     if(execve(cmd, argv, environ) == -1)
         printf("Something went wrong\n");

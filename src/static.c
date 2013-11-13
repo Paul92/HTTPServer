@@ -6,8 +6,8 @@
 
 void sendFile(FILE *f, int sockfd){
 
-    printf("So we're sending file....\n");
     char character;
+    write(sockfd, "\n\n", 2);
     while(!feof(f)){
         fscanf(f, "%c", &character);
         if(!feof(f)){
@@ -23,9 +23,9 @@ void sendHeaders(struct responseHeaders headers, int sockfd){
 
     sprintf(responseHeader, "HTTP/1.0 %d %s\n", headers.code, headers.codeName); 
     sprintf(responseHeader + strlen(responseHeader), "Location: %s\n", headers.location);
-    sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s\n\r\n", headers.contentType, headers.charset);
+    sprintf(responseHeader + strlen(responseHeader), "Content-type: %s; charset=%s", headers.contentType, headers.charset);
     if(headers.sendLength)
-        sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d\n\n", headers.fileSize);
+        sprintf(responseHeader + strlen(responseHeader), "Content-Length: %d", headers.fileSize);
 
     write(sockfd, responseHeader, strlen(responseHeader));
 
@@ -55,7 +55,6 @@ void staticHandler(struct headers *request, int sockfd){
         fscanf(p, "%d", &headers.fileSize);
         pclose(p);
     }
-    printf("Opening file %s\n", filePath);
     if(f == NULL){
         f = fopen(filePath, "r");
         fseek(f, 0, SEEK_END);
@@ -63,8 +62,6 @@ void staticHandler(struct headers *request, int sockfd){
         fseek(f, 0, SEEK_SET);
     }
 
-    printf("Sending headers...\n");
     sendHeaders(headers, sockfd);
-    printf("Sending file: %s\n", filePath);
     sendFile(f, sockfd);
 }

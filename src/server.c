@@ -36,9 +36,7 @@ void SIGCHLD_handler(int sig){
 
     pid_t pid;
 
-    while((pid = waitpid(-1, NULL, 0)) > 0){
-        printf("Reaped %d\n", pid);
-    }
+    while((pid = waitpid(-1, NULL, 0)) > 0);
     if(errno != ECHILD){
         ERR_LOG("waitpid error\n");
         shutdownDaemon();
