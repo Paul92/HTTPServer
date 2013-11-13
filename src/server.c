@@ -56,13 +56,10 @@ void SIGINT_handler(int sig){
 
 void requestHandler(struct headers *request, int sockfd){
     char *uri = getHeader(request, "URI:");
-    printf("URI: %s\n", uri);
 
     if(strstr(uri, ".php")){
-        printf("It's a dynamic request\n");
         dynamicHandler(request, sockfd);
     }else{
-        printf("It's a static request\n");
         staticHandler(request, sockfd);
     }
 }
@@ -97,21 +94,16 @@ int server(){
             ERR_LOG("Error on accept");
             shutdownDaemon();
         }else{
-            printf("New request\n");
             pid_t pid = fork();
             if(pid < 0){
                 ERR_LOG("Error on fork\n");
                 shutdownDaemon();
             }
-            printf("Port %d\n", newsockfd);
             if(pid == 0){
-                printf("New process %d\n", pid);
                 char request[REQUEST_MAX_SIZE];
                 read(newsockfd, request, REQUEST_MAX_SIZE);
                 struct headers *requestStruct;
-                printf("Parsing...\n");
                 requestStruct = parseHTTPRequest(request);
-                printf("Parsed\n");
                 requestHandler(requestStruct, newsockfd);
                 exit(0);
             }
